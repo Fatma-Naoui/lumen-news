@@ -1,0 +1,152 @@
+defend_task:
+  description: |
+    Round {round_num}: Analyze this article for credibility.
+
+    ARTICLE:
+    {article_text}
+
+    CONTEXT FROM VERIFIED ARTICLES:
+    {context}
+
+    PREVIOUS CONVERSATION:
+    {conversation_history}
+
+    YOUR TASK - Perform deep semantic and linguistic analysis:
+    
+    1. SEMANTIC ANALYSIS:
+       - Logical coherence and argument structure
+       - Consistency of claims throughout
+       - Clarity of main points and evidence
+       - Topic flow and narrative structure
+
+    2. LANGUAGE PATTERNS:
+       - Writing quality and professionalism
+       - Grammar, syntax, vocabulary
+       - Tone appropriateness
+       - Technical terminology usage
+
+    3. CREDIBILITY INDICATORS:
+       - Source attribution and citations
+       - Verifiable vs unverifiable claims
+       - Statistics, data, expert quotes
+       - Author credentials
+
+    4. FACTUAL CONSISTENCY:
+       - Internal consistency
+       - Alignment with known facts
+       - No contradictions
+       - Plausibility
+
+    DEFEND this article conversationally. Address previous challenges if any.
+  expected_output: "Detailed credibility analysis in conversational tone"
+  agent: "defender_agent"
+
+oppose_task:
+  description: |
+    Round {round_num}: Detect fake news patterns and bias.
+
+    ARTICLE:
+    {article_text}
+
+    DEFENDER'S ANALYSIS:
+    {defender_response}
+
+    PREVIOUS CONVERSATION:
+    {conversation_history}
+
+    YOUR TASK - Analyze for FAKENESS:
+    
+    1. SEMANTIC MANIPULATION:
+       - Emotional triggering language
+       - Loaded words with hidden bias
+       - Reality distortion framing
+       - Context omission
+       - Exaggeration/sensationalism
+
+    2. BIAS DETECTION:
+       - One-sided information
+       - Cherry-picked facts
+       - Stereotyping
+       - Unsubstantiated assumptions
+       - Ideological/commercial bias
+
+    3. LANGUAGE RED FLAGS:
+       - Clickbait/misleading titles
+       - Vague/anonymous sources
+       - Absolute statements
+       - Emotion over facts
+       - Conspiracy patterns
+
+    4. LOGICAL FALLACIES:
+       - Ad hominem/straw man
+       - False causation
+       - Slippery slope
+       - Circular logic
+       - Contradictions
+
+    5. VERIFICATION GAPS:
+       - Missing sources
+       - Unverifiable claims
+       - Outdated information
+       - No author credentials
+       - Untraceable origins
+
+    CHALLENGE conversationally. Counter defender's points.
+  expected_output: "Bias/fake news analysis in conversational tone"
+  agent: "opposer_agent"
+
+judge_task:
+  description: |
+    Final verdict after {num_rounds} rounds.
+
+    ARTICLE:
+    {article_text}
+
+    COMPLETE DEBATE:
+    {full_transcript}
+
+    YOUR TASK - Comprehensive analysis:
+
+    1. SEMANTIC EVALUATION:
+       - Which agent had coherent arguments?
+       - Logical inconsistencies found?
+       - Article coherence or manipulation?
+
+    2. LANGUAGE EVALUATION:
+       - Overall tone?
+       - Bias markers/loaded language?
+       - Professional journalism quality?
+       - Red flags detected?
+
+    3. CREDIBILITY EVALUATION:
+       - Sources cited and verifiable?
+       - Evidence provided?
+       - Verification gaps?
+
+    4. ARGUMENT COMPARISON:
+       - Stronger evidence?
+       - Most convincing arguments?
+
+    5. LEGITIMACY SCORE (0.0-1.0):
+       - 0.0-0.3: Definitely fake
+       - 0.3-0.5: Likely fake
+       - 0.5-0.7: Uncertain
+       - 0.7-0.9: Likely real
+       - 0.9-1.0: Definitely real
+
+    Return JSON:
+    {
+      "legitimacy_score": 0.85,
+      "verdict": "real",
+      "reasoning": "...",
+      "semantic_analysis": "...",
+      "language_analysis": "...",
+      "credibility_assessment": "...",
+      "key_factors": ["..."],
+      "winning_agent": "defender",
+      "agent1_strength": 0.8,
+      "agent2_strength": 0.6,
+      "confidence": "high"
+    }
+  expected_output: "JSON verdict with XAI explanation"
+  agent: "judge_agent"
