@@ -43,9 +43,26 @@ class DebateCrew():
         )
 
     @crew
-    def crew(self):
+    def defender_crew(self):
         return Crew(
-            agents=self.agents,
-            tasks=self.tasks,
+            agents=[self.defender_agent()],
+            tasks=[self.defend_task()],
             verbose=True
         )
+
+    @crew
+    def opposer_crew(self):
+        return Crew(
+            agents=[self.opposer_agent()],
+            tasks=[self.oppose_task()],
+            verbose=True
+        )
+
+    @crew
+    def judge_crew(self):
+        return Crew(
+            agents=[self.judge_agent()],
+            tasks=[self.judge_task()],
+            verbose=True
+        )
+
