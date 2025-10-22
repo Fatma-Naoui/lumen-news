@@ -23,6 +23,10 @@ def extract_json(raw_text):
 
 @shared_task(bind=True, max_retries=3)
 def run_debate_async(self, article_text, context="", num_rounds=2):
+    """
+    OPTIMIZED: Single crew instance, single execution.
+    No redundant agent instantiation.
+    """
     try:
         full_article = article_text
         
@@ -33,71 +37,40 @@ def run_debate_async(self, article_text, context="", num_rounds=2):
             else article_text
         )
 
-        conversation = []
-        opposer_last_argument = "No previous opposition"
-        defender_current_argument = ""
-        
         self.update_state(state='PROGRESS', meta={'stage': 'debate_starting', 'progress': 0})
 
-        for round_num in range(1, num_rounds + 1):
-            progress = int((round_num / (num_rounds + 1)) * 80)
-            self.update_state(
-                state='PROGRESS',
-                meta={
-                    'stage': f'round_{round_num}',
-                    'progress': progress,
-                    'current_round': round_num,
-                    'total_rounds': num_rounds
-                }
-            )
+        # ✅ OPTIMIZATION: Create crew ONCE
+        debate_crew = DebateCrew()
+        
+        # ✅ OPTIMIZATION: Run the ENTIRE debate in ONE crew execution
+        # The crew handles all rounds + judgment internally
+        result = debate_crew.crew().kickoff(inputs={
+            'article_text': article_for_debate,
+            'full_article': full_article,
+            'num_rounds': num_rounds,
+            'context': context or "No additional context"
+        })
 
-            if conversation:
-                recent_rounds = conversation[-2:]
-                conversation_context = "\n\n".join([
-                    f"Round {r['round']}:\n"
-                    f"DEFENDER: {r['defender']}\n"
-                    f"OPPOSER: {r['opposer']}"
-                    for r in recent_rounds
-                ])
-            else:
-                conversation_context = "This is the first round. No previous arguments."
+        self.update_state(state='PROGRESS', meta={'stage': 'parsing_results', 'progress': 95})
 
-            # DEFENDER
-            defender_crew = DebateCrew()
-            defender_crew.defender_crew().kickoff(inputs={
-                'round_num': round_num,
-                'num_rounds': num_rounds,
-                'article_text': article_for_debate,
-                'conversation_context': conversation_context,
-                'opposer_last_argument': opposer_last_argument,
-                'context': context or "No additional context"
-            })
-            
-            defender_current_argument = defender_crew.defend_task().output.raw
-            time.sleep(0.5)
+        # ✅ Extract conversation from task outputs
+        conversation = []
+        
+        # Round 1
+        conversation.append({
+            'round': 1,
+            'defender': debate_crew.defend_round1_task().output.raw,
+            'opposer': debate_crew.oppose_round1_task().output.raw
+        })
+        
+        # Round 2
+        conversation.append({
+            'round': 2,
+            'defender': debate_crew.defend_round2_task().output.raw,
+            'opposer': debate_crew.oppose_round2_task().output.raw
+        })
 
-            # OPPOSER
-            opposer_crew = DebateCrew()
-            opposer_crew.opposer_crew().kickoff(inputs={
-                'round_num': round_num,
-                'num_rounds': num_rounds,
-                'article_text': article_for_debate,
-                'conversation_context': conversation_context,
-                'defender_current_argument': defender_current_argument,
-                'context': context or "No additional context"
-            })
-            
-            opposer_last_argument = opposer_crew.oppose_task().output.raw
-
-            conversation.append({
-                'round': round_num,
-                'defender': defender_current_argument,
-                'opposer': opposer_last_argument
-            })
-
-            time.sleep(1)
-
-        # BUILD FULL DEBATE
+        # Build full debate transcript
         full_debate = "\n\n".join([
             f"=== ROUND {r['round']} ===\n"
             f"DEFENDER ARGUED:\n{r['defender']}\n\n"
@@ -105,18 +78,8 @@ def run_debate_async(self, article_text, context="", num_rounds=2):
             for r in conversation
         ])
 
-        # JUDGE
-        self.update_state(state='PROGRESS', meta={'stage': 'judging', 'progress': 90})
-        
-        judge_crew = DebateCrew()
-        judge_crew.judge_crew().kickoff(inputs={
-            'article_text': full_article,
-            'full_debate': full_debate,
-            'num_rounds': num_rounds,
-            'context': context or "No additional context"
-        })
-
-        raw_judge_output = judge_crew.judge_task().output.raw
+        # ✅ Get judge verdict
+        raw_judge_output = debate_crew.judge_task().output.raw
 
         try:
             verdict = extract_json(raw_judge_output)
@@ -150,7 +113,8 @@ def run_debate_async(self, article_text, context="", num_rounds=2):
                 'article_length': len(full_article),
                 'debate_length': len(full_debate),
                 'xai_enabled': True,
-                'total_api_calls': (num_rounds * 2) + 1
+                'total_api_calls': 5,  # ✅ FIXED: Always 5 calls (2+2+1)
+                'optimization': 'single_crew_execution'
             }
         }
 

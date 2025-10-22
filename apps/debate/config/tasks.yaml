@@ -1,77 +1,59 @@
 defend_task:
   description: |
-    Round {round_num}/{num_rounds}: Defend article credibility in conversational style.
+    Defend article credibility in conversational style.
 
     ARTICLE TO ANALYZE:
     {article_text}
 
-    CONVERSATION SO FAR:
-    {conversation_context}
-
-    OPPONENT'S LAST ARGUMENT:
-    {opposer_last_argument}
+    {% if context %}
+    PREVIOUS DEBATE CONTEXT:
+    {context}
+    {% endif %}
 
     YOUR RESPONSE (Max 200 words, conversational tone):
     
-    {% if round_num == 1 %}
-    Opening statement: Provide 2-3 SPECIFIC reasons why this article appears credible:
+    Provide 2-3 SPECIFIC reasons why this article appears credible:
     - SOURCE CREDIBILITY: What makes the source trustworthy?
     - LANGUAGE QUALITY: What linguistic features suggest authenticity?
     - FACTUAL CONSISTENCY: What claims can be verified?
     
     For each point: "I believe [claim] BECAUSE [specific evidence from article]"
-    {% else %}
-    Respond to your opponent's concerns while advancing your case:
-    - Address their STRONGEST objection with counter-evidence
-    - Introduce ONE new credibility indicator they missed
-    - Maintain conversational, engaging tone
-    
-    Format: "You raised [concern], but consider [counter-evidence]. Additionally, [new point]."
-    {% endif %}
 
   expected_output: "Conversational defense with 2-3 evidence-based points (~200 words)"
   agent: "defender_agent"
 
 oppose_task:
   description: |
-    Round {round_num}/{num_rounds}: Challenge credibility in direct response to defender.
+    Challenge credibility in direct response to defender.
 
     ARTICLE TO ANALYZE:
     {article_text}
 
-    CONVERSATION SO FAR:
-    {conversation_context}
-
-    DEFENDER JUST ARGUED:
-    {defender_current_argument}
+    {% if context %}
+    PREVIOUS ARGUMENTS:
+    {context}
+    {% endif %}
 
     YOUR RESPONSE (Max 200 words, conversational rebuttal):
     
-    {% if round_num == 1 %}
-    Opening challenge: Identify 2-3 SPECIFIC red flags:
+    Identify 2-3 SPECIFIC red flags:
     - MANIPULATION PATTERNS: Quote suspicious phrasing or structure
     - BIAS INDICATORS: Point to loaded/emotional language
     - VERIFICATION GAPS: Name missing sources or unverifiable claims
     
     For each: "This is suspicious BECAUSE [specific evidence]"
-    {% else %}
-    Counter the defender's latest argument:
-    - Directly challenge their STRONGEST claim with evidence
-    - Expose ONE new credibility gap they ignored
-    - Stay focused and conversational
-    
-    Format: "Your point about [X] overlooks [evidence]. Furthermore, [new red flag]."
-    {% endif %}
 
   expected_output: "Direct rebuttal with 2-3 evidence-based red flags (~200 words)"
   agent: "opposer_agent"
 
 judge_task:
   description: |
-    FINAL VERDICT after {num_rounds} rounds.
+    FINAL VERDICT after debate rounds.
 
-    ARTICLE: {article_text}
-    DEBATE: {full_debate}
+    ARTICLE: {full_article}
+    
+    COMPLETE DEBATE:
+    {context}
 
     Return ONLY valid JSON, no extra text:
     {{
@@ -79,7 +61,13 @@ judge_task:
       "verdict": "legitimate",
       "confidence": "high",
       "reasoning_chain": [
-        {{"step": 1, "factor": "source", "evidence": "NASA cited", "impact": "+0.2", "justification": "Reputable source"}}
+        {{
+          "step": 1,
+          "factor": "source",
+          "evidence": "NASA cited",
+          "impact": "+0.2",
+          "justification": "Reputable source"
+        }}
       ],
       "key_findings": ["Finding 1", "Finding 2"]
     }}

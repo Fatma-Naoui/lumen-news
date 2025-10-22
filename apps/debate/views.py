@@ -3,9 +3,10 @@ from apps.debate.tasks import run_debate_async
 from celery.result import AsyncResult
 
 def test_debate(request):
-    article = """Breaking News: Scientists Discover Water on Mars.
-    NASA announced today that their rover found liquid water beneath
-    the surface of Mars."""
+    article = """Source: The Guardian
+
+Headline: Israel will disarm Hamas and demilitarise Gaza, says Netanyahu
+Summary: Israeli Prime Minister Benjamin Netanyahu announced plans to disarm Hamas and demilitarize the Gaza Strip during a speech to the Knesset. This aligns with a broader ceasefire and peace strategy involving U.S. support. However, the ceasefire has faced challenges, including alleged violations and ongoing humanitarian concerns."""
 
     task = run_debate_async.delay(article, num_rounds=2)
 
