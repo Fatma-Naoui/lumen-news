@@ -1,76 +1,142 @@
 defend_task:
   description: |
-    Defend article credibility in conversational style.
+    You are defending the credibility of this article.
 
     ARTICLE TO ANALYZE:
     {article_text}
 
-    {% if context %}
     PREVIOUS DEBATE CONTEXT:
     {context}
+
+    YOUR TASK:
+    {% if context and 'OPPOSER' in context %}
+    ROUND 2 - You must respond to the opposer's challenges:
+    1. DO NOT simply repeat your previous arguments
+    2. Directly address each of the opposer's red flags
+    3. Either refute them with evidence, or concede but minimize their impact
+    4. Introduce NEW evidence or perspectives
+
+    For each opposer concern:
+    - Quote their specific claim
+    - Provide a direct counter-argument with evidence
+    - Explain why your interpretation is more valid
+
+    Example: "While you raised concerns about [X], I believe this is actually [counter-argument] because [evidence]."
+    {% else %}
+    ROUND 1 - Present your opening arguments:
+    Present 3 strong arguments for why this article appears credible.
+
+    Structure each argument as:
+    "I believe this article is credible because of [FACTOR]. [Specific evidence]. [Why this matters]."
+
+    Focus on:
+    - SOURCE CREDIBILITY: Publication reputation, author credentials
+    - LANGUAGE QUALITY: Professional tone, clear writing, proper citations
+    - FACTUAL CONSISTENCY: Verifiable claims, corroborating evidence
     {% endif %}
 
-    YOUR RESPONSE (Max 200 words, conversational tone):
-    
-    Provide 2-3 SPECIFIC reasons why this article appears credible:
-    - SOURCE CREDIBILITY: What makes the source trustworthy?
-    - LANGUAGE QUALITY: What linguistic features suggest authenticity?
-    - FACTUAL CONSISTENCY: What claims can be verified?
-    
-    For each point: "I believe [claim] BECAUSE [specific evidence from article]"
+    Keep your response conversational and under 200 words. Do NOT start with phrases like "I now can give a great answer" or "Thought:" - jump straight into your arguments.
 
-  expected_output: "Conversational defense with 2-3 evidence-based points (~200 words)"
+  expected_output: "Evidence-based credibility arguments in conversational style (~200 words)"
   agent: "defender_agent"
 
 oppose_task:
   description: |
-    Challenge credibility in direct response to defender.
+    You are challenging the credibility of this article.
 
     ARTICLE TO ANALYZE:
     {article_text}
 
-    {% if context %}
-    PREVIOUS ARGUMENTS:
+    DEFENDER'S ARGUMENTS:
     {context}
+
+    YOUR TASK:
+    {% if context and 'Round 2' in context %}
+    ROUND 2 - Push back against the defender's rebuttals:
+    1. DO NOT simply repeat your Round 1 red flags
+    2. Address the defender's counter-arguments directly
+    3. Show why their rebuttals are weak or insufficient
+    4. Deepen your critique with additional evidence
+
+    For each defender rebuttal:
+    - Acknowledge what they said
+    - Explain why it doesn't resolve your concern
+    - Provide additional evidence that strengthens your red flag
+
+    Example: "You claimed [X], but this doesn't address the core issue because [reasoning]. In fact, [additional evidence]."
+    {% else %}
+    ROUND 1 - Identify red flags:
+    Identify 3 specific red flags that challenge the article's credibility. Address the defender's points directly.
+
+    Structure each red flag as:
+    "[Specific element] is suspicious BECAUSE [concrete evidence and reasoning]."
+
+    Focus on:
+    - MANIPULATION PATTERNS: Loaded language, emotional appeals, misleading framing
+    - VERIFICATION GAPS: Missing sources, unverifiable claims, lack of counterpoints
+    - BIAS INDICATORS: One-sided reporting, selective facts, editorialized language
     {% endif %}
 
-    YOUR RESPONSE (Max 200 words, conversational rebuttal):
-    
-    Identify 2-3 SPECIFIC red flags:
-    - MANIPULATION PATTERNS: Quote suspicious phrasing or structure
-    - BIAS INDICATORS: Point to loaded/emotional language
-    - VERIFICATION GAPS: Name missing sources or unverifiable claims
-    
-    For each: "This is suspicious BECAUSE [specific evidence]"
+    Keep your response conversational and under 200 words. Quote specific text from the article. Do NOT start with phrases like "I now can give a great answer" or "Final Answer:" - jump straight into your arguments.
 
-  expected_output: "Direct rebuttal with 2-3 evidence-based red flags (~200 words)"
+  expected_output: "Evidence-based red flags in conversational rebuttal style (~200 words)"
   agent: "opposer_agent"
 
 judge_task:
   description: |
-    FINAL VERDICT after debate rounds.
+    You are the judge. Evaluate both sides of the debate and deliver a verdict.
 
-    ARTICLE: {full_article}
-    
-    COMPLETE DEBATE:
+    ARTICLE ANALYZED:
+    {full_article}
+
+    COMPLETE DEBATE TRANSCRIPT:
     {context}
 
-    Return ONLY valid JSON, no extra text:
+    YOUR TASK:
+    Analyze the full debate and determine the article's legitimacy score.
+
+    CRITICAL INSTRUCTIONS:
+    1. Return ONLY valid JSON - no extra text, no markdown, no code blocks
+    2. Do NOT include phrases like "I now can give a great answer", "Final Answer:", "Thought:", or any preamble
+    3. Start directly with the opening brace {
+    4. End directly with the closing brace }
+    5. Evaluate which side presented stronger evidence
+    6. Consider: source credibility, language patterns, verification gaps, bias indicators
+
+    REQUIRED JSON FORMAT (return EXACTLY this structure):
     {{
       "legitimacy_score": 0.75,
-      "verdict": "legitimate",
-      "confidence": "high",
+      "verdict": "partially_legitimate",
+      "confidence": "medium",
       "reasoning_chain": [
         {{
           "step": 1,
           "factor": "source",
-          "evidence": "NASA cited",
+          "evidence": "Specific evidence from debate",
           "impact": "+0.2",
-          "justification": "Reputable source"
+          "justification": "Why this factor matters"
+        }},
+        {{
+          "step": 2,
+          "factor": "language",
+          "evidence": "Another piece of evidence",
+          "impact": "-0.1",
+          "justification": "Explanation"
         }}
       ],
-      "key_findings": ["Finding 1", "Finding 2"]
+      "key_findings": ["Finding 1", "Finding 2", "Finding 3"],
+      "winner": "defender",
+      "winning_arguments": ["Strongest argument that swayed verdict"]
     }}
 
-  expected_output: "Valid JSON only"
+    Score ranges:
+    - 0.8-1.0: "legitimate" (high credibility)
+    - 0.6-0.79: "partially_legitimate" (credible with concerns)
+    - 0.4-0.59: "questionable" (significant doubts)
+    - 0.0-0.39: "likely_fake" (low credibility)
+
+    Verdict options: "legitimate", "partially_legitimate", "questionable", "likely_fake"
+    Winner options: "defender", "opposer", "tie"
+
+  expected_output: "Valid JSON object ONLY - no markdown, no extra text"
   agent: "judge_agent"

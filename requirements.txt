@@ -32,3 +32,8 @@ soundfile==0.12.1
 numpy==1.26.2
 pandas==2.1.4
 python-dateutil==2.8.2
+
+# LangChain Ecosystem
+langchain==0.3.4
+langchain-core==0.3.13
+langchain-community==0.3.2

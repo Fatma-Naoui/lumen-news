@@ -1,40 +1,107 @@
-from django.http import JsonResponse
-from apps.debate.tasks import run_debate_async
-from celery.result import AsyncResult
+from django.shortcuts import render
+from django.http import StreamingHttpResponse
+from apps.debate.crew import DebateCrew
+from apps.debate.streaming import StreamingCallback
+import json
+import threading
 
-def test_debate(request):
-    article = """Source: The Guardian
 
-Headline: Israel will disarm Hamas and demilitarise Gaza, says Netanyahu
-Summary: Israeli Prime Minister Benjamin Netanyahu announced plans to disarm Hamas and demilitarize the Gaza Strip during a speech to the Knesset. This aligns with a broader ceasefire and peace strategy involving U.S. support. However, the ceasefire has faced challenges, including alleged violations and ongoing humanitarian concerns."""
+# Create ONE shared streaming wrapper in views.py
+import litellm
+def debate_page(request):
+    """Render the main debate interface page"""
+    return render(request, 'debate.html')
 
-    task = run_debate_async.delay(article, num_rounds=2)
-
-    return JsonResponse({
-        'status': 'queued',
-        'task_id': str(task.id),
-        'check_status_url': f'/debate/status/{task.id}/'
-    })
-
-def check_debate_status(request, task_id):
-    task = AsyncResult(str(task_id))
-
-    if task.state == 'PENDING':
-        return JsonResponse({'status': 'pending'})
-    elif task.state == 'PROGRESS':
-        return JsonResponse({
-            'status': 'in_progress',
-            **task.info
-        })
-    elif task.state == 'SUCCESS':
-        return JsonResponse({
-            'status': 'completed',
-            'result': task.result
-        })
-    elif task.state == 'FAILURE':
-        return JsonResponse({
-            'status': 'failed',
-            'error': str(task.info)
-        })
-    else:
-        return JsonResponse({'status': task.state.lower()})
+def stream_debate(request):
+    article = request.GET.get('article', """...""")
+    context = request.GET.get('context', 'No additional context')
+    
+    def event_stream():
+        callback = StreamingCallback()
+        
+        # Store original ONCE
+        if not hasattr(litellm, '_debate_original_completion'):
+            litellm._debate_original_completion = litellm.completion
+        
+        agent_execution_counts = {'defender': 0, 'opposer': 0, 'judge': 0}
+        current_task_index = [0]  # Mutable to track in closure
+        
+        def smart_streaming_wrapper(*args, **kwargs):
+            """Single wrapper that determines agent from task order"""
+            
+            # Task execution order: defender1, opposer1, defender2, opposer2, judge
+            task_order = [
+                ('defender', 1),
+                ('opposer', 1),
+                ('defender', 2),
+                ('opposer', 2),
+                ('judge', None)
+            ]
+            
+            if current_task_index[0] < len(task_order):
+                agent, round_num = task_order[current_task_index[0]]
+                current_task_index[0] += 1
+                
+                callback.set_context(agent, round_num)
+            
+            kwargs['stream'] = True
+            response = litellm._debate_original_completion(*args, **kwargs)
+            
+            if hasattr(response, '__iter__'):
+                full_content = []
+                try:
+                    for chunk in response:
+                        callback(chunk)
+                        if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
+                            delta = chunk.choices[0].delta
+                            if hasattr(delta, 'content') and delta.content:
+                                full_content.append(delta.content)
+                except Exception as e:
+                    print(f"❌ Error: {e}")
+                
+                class FakeResponse:
+                    def __init__(self, content):
+                        self.content = content
+                        self.choices = [type('obj', (object,), {'message': type('obj', (object,), {'content': content})()})()]
+                
+                return FakeResponse(''.join(full_content))
+            return response
+        
+        # Patch litellm for this debate
+        litellm.completion = smart_streaming_wrapper
+        
+        def run_debate():
+            try:
+                debate_crew = DebateCrew(streaming_callback=callback)
+                debate_crew.crew().kickoff(inputs={
+                    'article_text': article[:1200],
+                    'full_article': article,
+                    'num_rounds': 2,
+                    'context': context
+                })
+                callback.queue.put({'type': 'complete'})
+            except Exception as e:
+                callback.queue.put({'type': 'error', 'message': str(e)})
+            finally:
+                # Restore original
+                litellm.completion = litellm._debate_original_completion
+        
+        thread = threading.Thread(target=run_debate, daemon=True)
+        thread.start()
+        
+        yield f"data: {json.dumps({'type': 'connected'})}\n\n"
+        
+        try:
+            while True:
+                event = callback.queue.get(timeout=120)
+                yield f"data: {json.dumps(event)}\n\n"
+                
+                if event['type'] in ['complete', 'error']:
+                    break
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+    
+    response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
+    return response
