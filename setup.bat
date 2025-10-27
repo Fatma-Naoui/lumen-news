@@ -32,6 +32,7 @@ if not exist .env (
         echo CELERY_BROKER_URL=redis://redis:6379/0
         echo CELERY_RESULT_BACKEND=redis://redis:6379/0
         echo GROQ_API_KEY=your-groq-api-key-here
+        echo NEWS_API_KEY=your-news-api-key-here
     ) > .env
     echo .env created! Update GROQ_API_KEY before running!
     pause
