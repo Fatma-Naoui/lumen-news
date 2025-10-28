@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
+#from django.contrib.postgres.fields import ArrayField
 from pgvector.django import VectorField  # new
 
 
@@ -18,7 +18,7 @@ class Article(models.Model):
     published_at = models.DateTimeField(null=True, blank=True)
 
     # Optional: BERT embedding stored as array of floats
-    embedding = VectorField(dimensions=384, null=True, blank=True)
+    #embedding = VectorField(dimensions=384, null=True, blank=True)
     # Status for processing pipeline
     status = models.CharField(max_length=32, default="pending")
 
@@ -26,3 +26,23 @@ class Article(models.Model):
 
     def __str__(self):
         return f"{self.title[:50]} ({self.source})"
+    
+class ArticleEmbedding(models.Model):
+    """Separate table just for embeddings - optimized for vector ops"""
+    article = models.OneToOneField(
+        Article, 
+        on_delete=models.CASCADE,
+        related_name='embedding_data',
+        primary_key=True
+    )
+    embedding = VectorField(dimensions=384)
+    generated_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        indexes = [
+            # pgvector index for fast similarity search
+            models.Index(fields=['embedding']),
+        ]
+    
+    def __str__(self):
+        return f"Embedding for: {self.article.title[:50]}"
