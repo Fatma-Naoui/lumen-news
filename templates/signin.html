@@ -17,18 +17,21 @@
 
             <form class="login-form" id="loginForm" novalidate>
                 <div class="form-group">
+                    <label for="username">Username</label>
                     <div class="input-wrapper">
+                        
                         <input type="text" id="username" name="username" required autocomplete="username">
-                        <label for="username">Username</label>
+                        
                         <span class="focus-border"></span>
                     </div>
                     <span class="error-message" id="usernameError"></span>
                 </div>
 
                 <div class="form-group">
+                    <label for="password">Password</label>
                     <div class="input-wrapper password-wrapper">
                         <input type="password" id="password" name="password" required autocomplete="current-password">
-                        <label for="password">Password</label>
+                        
                         <button type="button" class="password-toggle" id="passwordToggle" aria-label="Toggle password visibility">
                             <span class="eye-icon"></span>
                         </button>

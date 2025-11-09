@@ -208,9 +208,7 @@
                             <button class="btn btn-outline-primary">Sports</button>
                             <button class="btn btn-outline-primary">Technology</button>
                             <button class="btn btn-outline-primary">Politics</button>
-                            <button class="btn btn-outline-primary">Fashion</button>
-                            <button class="btn btn-outline-primary">Lifestyle</button>
-                            <button class="btn btn-outline-primary">Finance</button>
+                            <button class="btn btn-outline-primary">Health</button>
                         </div>
                         <div class="mb-3">
                             <select class="form-select">
@@ -258,19 +256,21 @@
 
                     <div class="mt-4">
                         <div class="translate-container d-inline-block">
-                            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                Translate
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" data-lang="fr">Translate to French</a></li>
-                                <li><a class="dropdown-item" href="#" data-lang="ar">Translate to Arabic</a></li>
-                            </ul>
-                        </div>
-                        <button class="btn btn-success summarize-btn">Summarize</button>
-                        <button id="analyze-btn" class="btn btn-info">Analyze Sentiment</button>
-                        <button class="btn btn-info debate-btn" data-article-id="{{ article.id }}">
-                            Debate
-                        </button>
+    <div class="btn-group">
+  <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+    Translate
+  </button>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="#" data-lang="fr">Translate to French</a></li>
+    <li><a class="dropdown-item" href="#" data-lang="ar">Translate to Arabic</a></li>
+  </ul>
+</div>
+<button class="btn btn-outline-secondary summarize-btn">Summarize</button>
+<button id="analyze-btn" class="btn btn-outline-info">Analyze Sentiment</button>
+<button class="btn btn-outline-success debate-btn" data-article-id="{{ article.id }}">
+  Verify News Accuracy
+</button>
+
 
                         <a href="{% url 'feed:feed' %}" class="btn btn-secondary">Back to Feed</a>
                     </div>

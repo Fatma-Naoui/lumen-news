@@ -76,10 +76,12 @@ def recommendation(request):
 
 def latest_feed(request):
     """Display latest articles feed based on published date"""
-    # Get the latest 10 articles ordered by published date
-    latest_articles = Article.objects.order_by('-published_at')[:]
-    
-    # Format articles as dictionaries (consistent with your feed format)
+    # ---- ONLY ARTICLES THAT HAVE A published_at value ----
+    latest_articles = Article.objects.filter(
+        published_at__isnull=False          # <-- THIS LINE
+    ).order_by('-published_at')[:]
+
+    # Format articles as dictionaries
     articles = [
         {
             "id": article.id,
@@ -93,7 +95,7 @@ def latest_feed(request):
         }
         for article in latest_articles
     ]
-    
+
     return render(request, 'feed.html', {'articles': articles})
 
 @login_required(login_url='/home/Login')
