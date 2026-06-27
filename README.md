@@ -4,52 +4,51 @@ An intelligent news platform combining Retrieval-Augmented Generation (RAG), mul
 
 It leverages Large Language Models, vector databases, and multi-agent reasoning to deliver trustworthy and interactive news experiences.
 
-# 🚀 Features
+# Features
 
-## 📰 News Aggregation
+## News Aggregation
 - RSS feed scraping from multiple sources
 - Article extraction and cleaning
 - Automatic summarization
 - Translation (English → French, English → Arabic)
 
-## 🤖 AI Chatbot (RAG)
-A Retrieval-Augmented Generation system for querying news.
+## AI Chatbot (RAG)
+A Retrieval-Augmented Generation system for querying news content.
 
 - Hybrid retrieval (BM25 + MiniLM embeddings)
 - Source-grounded responses
 - Multi-turn conversation memory
+- Speech-enabled interaction (Whisper Large V3 + gTTS integrated in chatbot)
 - Model: groq/llama-3.3-70b-versatile
-- Speech-to-text: Whisper Large V3
-- Text-to-speech: gTTS
 
-## ⚖️ Multi-Agent Fake News Detection (CrewAI)
+##  Multi-Agent Fake News Detection (CrewAI)
 
 A debate-based verification system using adversarial reasoning.
 
-### 🛡 Defender Agent
+### Defender Agent
 - Model: groq/llama-3.1-8b-instant
 - Supports article credibility
 - Retrieves supporting evidence via web search
 - Builds factual arguments
 
-### ⚔️ Opposer Agent
+### Opposer Agent
 - Model: groq/llama-3.1-8b-instant
 - Challenges credibility
 - Finds contradictory evidence
 - Detects misinformation and inconsistencies
 
-### 👨‍⚖️ Judge Agent
+### Judge Agent
 - Model: groq/llama-3.3-70b-versatile
 - Evaluates both agents
 - Scores reasoning quality
 - Produces final verdict
 
-### 🌐 Web Search Tool
+### Web Search Tool
 - Powered by Serper API
 - Provides real-time Google results (titles, snippets, URLs)
 - Grounds reasoning in external evidence
 
-## 🔍 Semantic Search
+## Semantic Search
 - Model: sentence-transformers/all-MiniLM-L6-v2
 - Stored using PostgreSQL + pgvector
 - Used for:
@@ -57,15 +56,15 @@ A debate-based verification system using adversarial reasoning.
   - RAG retrieval
   - Recommendation engine
 
-## 📝 Summarization
+## Summarization
 - Model: facebook/bart-large-cnn
 - Generates concise article summaries
 
-## 🌍 Translation
+## Translation
 - Helsinki-NLP/opus-mt-en-fr
 - Helsinki-NLP/opus-mt-en-ar
 
-## 😊 Sentiment Analysis
+## Sentiment Analysis
 - Model: mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis
 - Stack: Hugging Face Transformers, spaCy, SHAP
 - Outputs:
@@ -73,7 +72,7 @@ A debate-based verification system using adversarial reasoning.
   - confidence score
   - SHAP feature importance
 
-## 🎯 Recommendation Engine
+## Recommendation Engine
 A hybrid ranking system using:
 
 - 50% semantic similarity
@@ -92,7 +91,7 @@ Mental state filtering:
 Limitation:
 - Sentiment is not always stored → defaults to neutral (0.5)
 
-# 🧠 System Architecture
+# System Architecture
 
 RSS Feeds → Scraping → Cleaning → Summarization → Translation → Embedding (MiniLM) → PostgreSQL (pgvector)
 
@@ -101,11 +100,11 @@ Then:
 - Recommendation Engine
 - Fake News Debate System
 
-# ⚖️ Multi-Agent Flow
+# Multi-Agent Flow
 
 Article → Defender Agent ↔ Opposer Agent → Web Search (Serper API) → Judge Agent → Final Verdict
 
-# 🧪 Models & Libraries
+# Models & Libraries
 
 LLMs:
 - Llama 3.3 70B (Chatbot, Judge)
@@ -115,7 +114,7 @@ NLP:
 - MiniLM (Embeddings)
 - BART CNN (Summarization)
 - RoBERTa financial sentiment model
-- Whisper Large V3 (Speech-to-text)
+- Whisper Large V3 (Speech-to-text & speech-enabled chatbot)
 - Helsinki-NLP (Translation)
 
 Frameworks:
@@ -123,13 +122,12 @@ Frameworks:
 - CrewAI
 - Hugging Face Transformers
 - SHAP
-- spaCy
 
 Infrastructure:
 - Django / DRF
 - PostgreSQL + pgvector
 
-# 👩‍💻 Project Goal
+# Project Goal
 
 LumenNews AI combines:
 - RAG intelligence
